@@ -801,6 +801,7 @@ arm_uc_error_t arm_uc_http_socket_send_request(void)
     arm_uc_uri_t *request_uri = context->request_uri;
     arm_uc_http_rqst_t request_type = context->request_type;
 
+
     /* Template for generating HTTP requests */
     static const char HTTP_HEADER_TEMPLATE[] =
         "%s %s HTTP/1.1\r\n" // Status line
@@ -828,6 +829,9 @@ arm_uc_error_t arm_uc_http_socket_send_request(void)
         }
     }
 
+    UC_SRCE_TRACE("%s req type %d/%s ..", __func__, request_type, req_type_str);
+    UC_SRCE_TRACE("%s buffer size->max: %" PRIu32 ", buffer size: %" PRIu32 , __func__, request_buffer->size_max, request_buffer->size);
+
     if (ARM_UC_IS_NOT_ERROR(status)) {
         /* Construct download header */
         request_buffer->size = snprintf((char *) request_buffer->ptr,
@@ -836,6 +840,10 @@ arm_uc_error_t arm_uc_http_socket_send_request(void)
                                         req_type_str,
                                         request_uri->path,
                                         request_uri->host);
+
+        UC_SRCE_TRACE("%s construct 1 : buffer size: %" PRIu32 , __func__, request_buffer->size);
+
+
         /* If fragment then construct the Range field that makes this a partial content request */
         if (request_type == RQST_TYPE_GET_FRAG) {
             context->open_burst_requested = request_buffer->size_max * frags_per_burst;
@@ -845,6 +853,12 @@ arm_uc_error_t arm_uc_http_socket_send_request(void)
                                              context->request_offset,
                                              context->request_offset + context->open_burst_requested - 1);
         }
+
+        UC_SRCE_TRACE("%s construct 2 : buffer size: %" PRIu32 , __func__, request_buffer->size);
+        UC_SRCE_TRACE("%s construct 2 : offset: %" PRIu32 , __func__, context->request_offset);
+        UC_SRCE_TRACE("%s construct 2 : open_burst_requested: %" PRIu32 , __func__, context->open_burst_requested);
+
+
         /* Terminate request with a carriage return and newline */
         request_buffer->size += snprintf((char *) request_buffer->ptr + request_buffer->size,
                                          request_buffer->size_max - request_buffer->size,
@@ -852,7 +866,14 @@ arm_uc_error_t arm_uc_http_socket_send_request(void)
 
         /* Terminate string */
         request_buffer->ptr[request_buffer->size] = '\0';
+        UC_SRCE_TRACE("%s construct 3 : buffer size: %" PRIu32 , __func__, request_buffer->size);
         UC_SRCE_TRACE("\r\n%s", request_buffer->ptr);
+        UC_SRCE_TRACE("\r\nPrint with size:\r\n");
+
+        for(uint32_t i=0; i<(request_buffer->size); i++) {
+            printf("%c", request_buffer->ptr[i]);
+        }
+
     }
 
     if (ARM_UC_IS_NOT_ERROR(status)) {
